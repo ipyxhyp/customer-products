@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
@@ -183,7 +182,5 @@ public class CustomerProductsServiceTest {
         assertNotNull(productResponse);
         assertEquals(productResponse.getId(), updatedId);
         assertEquals(productResponse.getTitle(), titleUpdated);
-        assertEquals(productResponse.getModifiedAt(), modifiedDateTime.truncatedTo(ChronoUnit.SECONDS));
-
     }
 }

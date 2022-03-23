@@ -3,12 +3,12 @@ package org.ptr.orders.app.service;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.ptr.orders.app.dao.CustomersRepository;
 import org.ptr.orders.app.dao.ProductsRepository;
 import org.ptr.orders.app.mapper.CustomerMapper;
 import org.ptr.orders.app.mapper.CustomerRequestMapper;
 import org.ptr.orders.app.mapper.ProductMapper;
-import org.ptr.orders.app.mapper.ProductRequestMapper;
 import org.ptr.orders.app.model.Customer;
 import org.ptr.orders.app.model.Product;
 import org.ptr.orders.app.rest.dto.CustomerResponse;
@@ -44,8 +44,6 @@ public class CustomerProductsService {
 
     private ProductMapper productMapper;
 
-    private ProductRequestMapper productRequestMapper;
-
     private CustomersRepository customersRepository;
 
     private ProductsRepository productsRepository;
@@ -58,11 +56,6 @@ public class CustomerProductsService {
     @Autowired
     public void setProductMapper(ProductMapper productMapper) {
         this.productMapper = productMapper;
-    }
-
-    @Autowired
-    public void setProductRequestMapper(ProductRequestMapper productRequestMapper) {
-        this.productRequestMapper = productRequestMapper;
     }
 
     @Autowired
@@ -147,12 +140,14 @@ public class CustomerProductsService {
      * @return productDto found
      *
      * */
+    @Transactional(readOnly = true)
     public ProductResponse getProductById(Long productId) {
 
         ProductResponse productResponse = new ProductResponse();
         Optional<Product> product = this.productsRepository.findById(productId);
         if(product.isPresent()){
-            productMapper.map(product.get(), productResponse);
+            Product realProduct = product.get();
+            productMapper.map(realProduct, productResponse);
             log.trace("productDto found by id : {}", productResponse);
         } else {
             throwNoEntityFoundException(String.format(PRODUCT_BY_ID_NOT_FOUND, productId));
@@ -241,6 +236,7 @@ public class CustomerProductsService {
      * @return updated productId
      *
      * */
+
     public Long updateProduct(Long productId, ProductRequest productRequest) {
         Long failedUpdateValue = -1L;
         if(productId == null || productRequest == null){
@@ -250,8 +246,9 @@ public class CustomerProductsService {
             Optional<Product> existingProduct = productsRepository.findById(productId);
             Product productToUpdate;
             if(existingProduct.isPresent() ){
+                productToUpdate = getProductFromRequest(productRequest, existingProduct.get());
                 productToUpdate = productsRepository.save(
-                    getProductFromRequest(productRequest, existingProduct.get())
+                    productToUpdate
                 );
                 return productToUpdate.getId();
             } else {
@@ -291,8 +288,22 @@ public class CustomerProductsService {
         return customer;
     }
 
+
     private Product getProductFromRequest(ProductRequest productRequest, Product product)  {
-        productRequestMapper.map(productRequest, product);
+        if(productRequest != null && product != null){
+            if(StringUtils.isNotBlank(productRequest.getTitle())){
+                product.setTitle(productRequest.getTitle());
+            }
+            if(productRequest.getCreatedAt() != null){
+                product.setCreatedAt(productRequest.getCreatedAt());
+            }
+            if(productRequest.getPrice() != null){
+                product.setPrice(productRequest.getPrice());
+            }
+            if(productRequest.getModifiedAt() != null){
+                product.setModifiedAt(productRequest.getModifiedAt());
+            }
+        }
         return product;
     }
 
